@@ -4,7 +4,7 @@
 
 Utility function for converting XPath expressions to CSS selectors.
 
-Originally written in Python by [santiycr](https://github.com/santiycr) for [cssify](https://github.com/santiycr/cssify) and ported to JavaScript by [Dither](https://github.com/Dither) who published it in [this gist](https://gist.github.com/Dither/1909679). Since I needed it in a project I have converted it to ES2015, cleaned it up a bit and [published it to npm][npm-url].
+Originally written in Python by [santiycr](https://github.com/santiycr) for [cssify](https://github.com/santiycr/cssify) and ported to JavaScript by [Dither](https://github.com/Dither) who published it in [this gist](https://gist.github.com/Dither/1909679). Since I needed it in a project and can't depend on a gist in my `package.json` I have converted it to ES2015 and CommonJS, cleaned it up a bit and [published it to npm][npm-url].
 
 
 ## Install
