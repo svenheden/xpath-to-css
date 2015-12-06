@@ -1,5 +1,6 @@
 # XPath to CSS
 
+[![Build Status][travis-image]][travis-url]
 [![NPM version][npm-image]][npm-url]
 
 Utility function for converting XPath expressions to CSS selectors.
@@ -31,3 +32,5 @@ MIT © [Jonathan Persson](https://github.com/jonathanp)
 
 [npm-url]: https://npmjs.org/package/xpath-to-css
 [npm-image]: https://badge.fury.io/js/xpath-to-css.svg
+[travis-image]: https://travis-ci.org/jonathanp/xpath-to-css.svg
+[travis-url]: https://travis-ci.org/jonathanp/xpath-to-css
