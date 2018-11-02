@@ -108,7 +108,7 @@ const xPathToCss = expr => {
 
             if (match['contained']) {
                 if (match['cattr'].indexOf('@') === 0) {
-                    attr = '[' + match['cattr'].replace(/^@/, '') + '*=' + match['cvalue'] + ']';
+                    attr = '[' + match['cattr'].replace(/^@/, '') + '*="' + match['cvalue'] + '"]';
                 } else {
                     throw new Error('Invalid or unsupported XPath attribute: ' + match['cattr']);
                 }
@@ -130,7 +130,7 @@ const xPathToCss = expr => {
                         if (match['mvalue'].indexOf(' ') !== -1) {
                             match['mvalue'] = '\"' + match['mvalue'].replace(/^\s+|\s+$/,'') + '\"';
                         }
-                        attr = '[' + match['mattr'].replace('@', '') + '=' + match['mvalue'] + ']';
+                        attr = '[' + match['mattr'].replace('@', '') + '="' + match['mvalue'] + '"]';
                         break;
                 }
             } else if (match['idvalue']) {
