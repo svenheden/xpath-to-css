@@ -1,6 +1,6 @@
 {
   "name": "xpath-to-css",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "title": "XPath to CSS",
   "description": "Utility function for converting XPath expressions to CSS selectors",
   "main": "index.js",
