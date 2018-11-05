@@ -24,7 +24,7 @@ test('conversion', function(assert) {
   assert.equal(actual, expected);
 
   actual = xPathToCss('//div[@id="foo"][2]/span[@class="bar"]//a[contains(@class, "baz")]//img[1]');
-  expected = 'div#foo:nth-of-type(2) > span.bar a[class*=baz] img:first-of-type';
+  expected = 'div#foo:nth-of-type(2) > span.bar a[class*="baz"] img:first-of-type';
   assert.equal(actual, expected);
 
   assert.end();
