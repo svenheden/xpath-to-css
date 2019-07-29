@@ -6,7 +6,7 @@
  * Originally written in Python by [santiycr](https://github.com/santiycr) for
  * [cssify](https://github.com/santiycr/cssify) and ported to JavaScript by
  * [Dither](https://github.com/Dither). Converted to ES2015 and packaged as an npm module by
- * [jonathanp](https://github.com/jonathanp)
+ * [svenheden](https://github.com/svenheden)
  */
 
 'use strict';

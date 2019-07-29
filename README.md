@@ -28,9 +28,9 @@ console.log(css); // => 'div#foo:nth-of-type(2) > span.bar a[class*=baz] img:fir
 
 ## License
 
-MIT © [Jonathan Persson](https://github.com/jonathanp)
+MIT © [Jonathan Svenheden](https://github.com/svenheden)
 
 [npm-url]: https://npmjs.org/package/xpath-to-css
 [npm-image]: https://badge.fury.io/js/xpath-to-css.svg
-[travis-image]: https://travis-ci.org/jonathanp/xpath-to-css.svg
-[travis-url]: https://travis-ci.org/jonathanp/xpath-to-css
+[travis-image]: https://travis-ci.org/svenheden/xpath-to-css.svg
+[travis-url]: https://travis-ci.org/svenheden/xpath-to-css

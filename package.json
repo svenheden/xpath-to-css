@@ -1,6 +1,6 @@
 {
   "name": "xpath-to-css",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "title": "XPath to CSS",
   "description": "Utility function for converting XPath expressions to CSS selectors",
   "main": "index.js",
@@ -9,12 +9,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonathanp/xpath-to-css.git"
+    "url": "https://github.com/svenheden/xpath-to-css.git"
   },
   "engines": {
-    "node" : ">=4.0.0"
+    "node": ">=4.0.0"
   },
-  "author": "Jonathan Persson <persson.jonathan@gmail.com>",
+  "author": "Jonathan Svenheden <jonathan@svenheden.com>",
   "license": "MIT",
   "devDependencies": {
     "tape": "^4.2.2"
