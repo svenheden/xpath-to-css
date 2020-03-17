@@ -17,6 +17,6 @@
   "author": "Jonathan Svenheden <jonathan@svenheden.com>",
   "license": "MIT",
   "devDependencies": {
-    "tape": "^4.2.2"
+    "tape": "^4.13.2"
   }
 }
