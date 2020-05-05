@@ -23,6 +23,14 @@ test('conversion', function(assert) {
   expected = 'HTML > BODY > DIV#menu > NAV > UL:nth-of-type(5)';
   assert.equal(actual, expected);
 
+  actual = xPathToCss('/HTML/BODY/DIV[@id=\'menu\']/NAV/UL[10]');
+  expected = 'HTML > BODY > DIV#menu > NAV > UL:nth-of-type(10)';
+  assert.equal(actual, expected);
+
+  actual = xPathToCss('/HTML/BODY/DIV[@id=\'menu\']/NAV/UL[123]');
+  expected = 'HTML > BODY > DIV#menu > NAV > UL:nth-of-type(123)';
+  assert.equal(actual, expected);
+
   actual = xPathToCss('//div[@id="foo"][2]/span[@class="bar"]//a[contains(@class, "baz")]//img[1]');
   expected = 'div#foo:nth-of-type(2) > span.bar a[class*="baz"] img:first-of-type';
   assert.equal(actual, expected);
