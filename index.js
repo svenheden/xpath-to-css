@@ -29,7 +29,7 @@ const getValidationRegex = () => {
             "|"+
               "(?P<contained>contains\\((?P<cattr>@?%(attribute)s,\\s*[\"\\'](?P<cvalue>%(value)s)[\"\\']\\))"+// `[contains(@id, "bleh")]` supported and `[contains(text(), "some")]` is not
             ")\\])?"+
-            "(\\[\\s*(?P<nth>\\d|last\\(\\s*\\))\\s*\\])?"+
+            "(\\[\\s*(?P<nth>\\d+|last\\(\\s*\\))\\s*\\])?"+
           ")"+
         ")";
 
