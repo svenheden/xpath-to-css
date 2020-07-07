@@ -36,7 +36,7 @@ const getValidationRegex = () => {
     const subRegexes = {
         "tag": "([a-zA-Z][a-zA-Z0-9]{0,10}|\\*)",
         "attribute": "[.a-zA-Z_:][-\\w:.]*(\\(\\))?)",
-        "value": "\\s*[\\w/:][-/\\w\\s,:;.]*"
+        "value": "\\s*[\\w\\u4e00-\\u9fa5\\uf900-\\ufa2d/:][-/\\w\\u4e00-\\u9fa5\\uf900-\\ufa2d\\s,:;.]*"
     };
 
     Object.keys(subRegexes).forEach(key => {

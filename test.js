@@ -35,5 +35,9 @@ test('conversion', function(assert) {
   expected = 'div#foo:nth-of-type(2) > span.bar a[class*="baz"] img:first-of-type';
   assert.equal(actual, expected);
 
+  actual = xPathToCss('//*[@id="中文支持_support_chineses"]');
+  expected = '#中文支持_support_chineses';
+  assert.equal(actual, expected);
+  
   assert.end();
 });
