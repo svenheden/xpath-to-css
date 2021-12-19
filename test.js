@@ -35,5 +35,9 @@ test('conversion', function(assert) {
   expected = 'div#foo:nth-of-type(2) > span.bar a[class*="baz"] img:first-of-type';
   assert.equal(actual, expected);
 
+  actual = xPathToCss('//div/custom:element');
+  expected = 'div > custom:element';
+  assert.equal(actual, expected);
+
   assert.end();
 });
