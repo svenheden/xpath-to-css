@@ -9,7 +9,7 @@ Originally written in Python by [santiycr](https://github.com/santiycr) for [css
 
 ## Install
 
-```
+```sh
 npm install --save xpath-to-css
 ```
 
