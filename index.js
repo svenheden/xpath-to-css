@@ -34,7 +34,7 @@ const getValidationRegex = () => {
         ")";
 
     const subRegexes = {
-        "tag": "([a-zA-Z][a-zA-Z0-9:-]{0,20}|\\*)",
+        "tag": "([a-zA-Z][a-zA-Z0-9:-]*|\\*)",
         "attribute": "[.a-zA-Z_:][-\\w:.]*(\\(\\))?)",
         "value": "\\s*[\\w/:][-/\\w\\s,:;.]*"
     };
