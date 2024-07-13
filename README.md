@@ -9,8 +9,8 @@ Originally written in Python by [santiycr](https://github.com/santiycr) for [css
 
 ## Install
 
-```
-$ npm install --save xpath-to-css
+```sh
+npm install --save xpath-to-css
 ```
 
 ## Usage
