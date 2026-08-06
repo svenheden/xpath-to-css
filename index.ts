@@ -4,6 +4,7 @@ type Axis = "root" | "child" | "descendant" | "followingSibling";
 type Predicate =
   | { type: "id" | "class"; value: string }
   | { type: "attrEquals" | "attrContains"; name: string; value: string }
+  | { type: "hasChild" | "notHasChild"; tag: string }
   | { type: "nth"; index: number }
   | { type: "nthLast" };
 
@@ -70,6 +71,7 @@ function stepToCss(step: XPathStep, index: number): string {
 
   let attrs = "";
   let nth = "";
+  let pseudos = "";
 
   for (const p of step.predicates) {
     switch (p.type) {
@@ -85,6 +87,12 @@ function stepToCss(step: XPathStep, index: number): string {
       case "attrContains":
         attrs += `[${p.name}*="${p.value}"]`;
         break;
+      case "hasChild":
+        pseudos += `:has(> ${p.tag})`;
+        break;
+      case "notHasChild":
+        pseudos += `:not(:has(> ${p.tag}))`;
+        break;
       case "nth":
         nth += p.index === 1 ? ":first-of-type" : `:nth-of-type(${p.index})`;
         break;
@@ -94,7 +102,7 @@ function stepToCss(step: XPathStep, index: number): string {
     }
   }
 
-  return nav + tag + attrs + nth;
+  return nav + tag + attrs + pseudos + nth;
 }
 
 /**
@@ -125,42 +133,59 @@ function tokenizeXPath(expr: string): XPathStep[] {
     const preds: Predicate[] = [];
     for (const p of predicates.matchAll(/\[(?<content>[^\]]+)\]/g)) {
       const content = p.groups!.content.trim();
+      const subexpr = content.split(/\s+and\s+/i);
 
-      if (content === "last()") {
-        preds.push({ type: "nthLast" });
-        continue;
+      for (const sub of subexpr) {
+        const expr = sub.trim();
+
+        if (content === "last()") {
+          preds.push({ type: "nthLast" });
+          continue;
+        }
+
+        const nthMatch = /^(\d+)$/.exec(expr);
+        if (nthMatch) {
+          preds.push({ type: "nth", index: parseInt(nthMatch[1], 10) });
+          continue;
+        }
+
+        const notTagMatch = /^not\((?<tag>[a-zA-Z][\w:-]*)\)$/.exec(expr);
+        if (notTagMatch?.groups) {
+          preds.push({ type: "notHasChild", tag: notTagMatch.groups.tag });
+          continue;
+        }
+
+        const childTagMatch = /^(?<tag>[a-zA-Z][\w:-]*)$/.exec(expr);
+        if (childTagMatch?.groups) {
+          preds.push({ type: "hasChild", tag: childTagMatch.groups.tag });
+          continue;
+        }
+
+        const containsMatch =
+          /^contains\(@(?<name>[a-zA-Z_][\w:-]*),\s*["'](?<value>[^"']+)["']\)$/.exec(
+            expr
+          );
+        if (containsMatch?.groups) {
+          preds.push({
+            type: "attrContains",
+            name: containsMatch.groups.name,
+            value: containsMatch.groups.value,
+          });
+          continue;
+        }
+
+        const eqMatch =
+          /^@(?<name>[a-zA-Z_][\w:-]*)=["'](?<value>[^"']+)["']$/.exec(expr);
+        if (eqMatch?.groups) {
+          const { name, value } = eqMatch.groups;
+          if (name === "id") preds.push({ type: "id", value });
+          else if (name === "class") preds.push({ type: "class", value });
+          else preds.push({ type: "attrEquals", name, value });
+          continue;
+        }
+
+        throw new Error(`Unsupported predicate: ${expr}`);
       }
-
-      const nthMatch = /^(\d+)$/.exec(content);
-      if (nthMatch) {
-        preds.push({ type: "nth", index: parseInt(nthMatch[1], 10) });
-        continue;
-      }
-
-      const containsMatch =
-        /^contains\(@(?<name>[a-zA-Z_][\w:-]*),\s*["'](?<value>[^"']+)["']\)$/.exec(
-          content
-        );
-      if (containsMatch?.groups) {
-        preds.push({
-          type: "attrContains",
-          name: containsMatch.groups.name,
-          value: containsMatch.groups.value,
-        });
-        continue;
-      }
-
-      const eqMatch =
-        /^@(?<name>[a-zA-Z_][\w:-]*)=["'](?<value>[^"']+)["']$/.exec(content);
-      if (eqMatch?.groups) {
-        const { name, value } = eqMatch.groups;
-        if (name === "id") preds.push({ type: "id", value });
-        else if (name === "class") preds.push({ type: "class", value });
-        else preds.push({ type: "attrEquals", name, value });
-        continue;
-      }
-
-      throw new Error(`Unsupported predicate: ${content}`);
     }
 
     steps.push({

@@ -100,6 +100,43 @@ describe("@miichom/lodestone", () => {
     expect(xPathToCss("div/following-sibling::span")).toBe("div + span");
   });
 
+  it("converts tag presence predicates to :has()", () => {
+    expect(xPathToCss("//div[img]")).toBe("div:has(> img)");
+  });
+
+  it("converts negated tag predicates to :not(:has())", () => {
+    expect(xPathToCss("//div[not(span)]")).toBe("div:not(:has(> span))");
+  });
+
+  it("converts multi-condition predicates connected by 'and'", () => {
+    const actual = xPathToCss("//ul/li[img and span and not(i)]/span");
+    const expected = "ul > li:has(> img):has(> span):not(:has(> i)) > span";
+
+    expect(actual).toBe(expected);
+  });
+
+  it("correctly queries HTML nodes based on child element presence", () => {
+    const html = `
+      <section>
+        <div id="target"><img src="a.png"><span>Valid Target</span></div>
+        <div id="ignored-1"><i><img src="b.png"></i><span>Ignored Nested</span></div>
+        <div id="ignored-2"><span>No Image</span></div>
+      </section>
+    `;
+
+    const { document } = parseHTML(html);
+
+    // 1. Target container with direct <img> and <span>, but no <i>
+    const selector = xPathToCss("//section/div[img and span and not(i)]/span");
+    const el = document.querySelector(selector);
+    expect(el?.textContent?.trim()).toBe("Valid Target");
+
+    // 2. Query for element missing a specific child
+    const noSpanSelector = xPathToCss("//section/div[not(span)]");
+    const noSpanEl = document.querySelector(noSpanSelector);
+    expect(noSpanEl).toBeNull();
+  });
+
   it("converts live XPath from unjs.io", async () => {
     const res = await fetch("https://unjs.io/", {
       headers: {
