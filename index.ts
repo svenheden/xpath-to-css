@@ -5,6 +5,7 @@ type Predicate =
   | { type: "id" | "class"; value: string }
   | { type: "attrEquals" | "attrContains"; name: string; value: string }
   | { type: "hasChild" | "notHasChild"; tag: string }
+  | { type: "notAttr"; name: string }
   | { type: "nth"; index: number }
   | { type: "nthLast" };
 
@@ -93,6 +94,9 @@ function stepToCss(step: XPathStep, index: number): string {
       case "notHasChild":
         pseudos += `:not(:has(> ${p.tag}))`;
         break;
+      case "notAttr":
+        attrs += `:not([${p.name}])`;
+        break;
       case "nth":
         nth += p.index === 1 ? ":first-of-type" : `:nth-of-type(${p.index})`;
         break;
@@ -158,6 +162,12 @@ function tokenizeXPath(expr: string): XPathStep[] {
         const childTagMatch = /^(?<tag>[a-zA-Z][\w:-]*)$/.exec(expr);
         if (childTagMatch?.groups) {
           preds.push({ type: "hasChild", tag: childTagMatch.groups.tag });
+          continue;
+        }
+
+        const notAttrMatch = /^not\(@(?<name>[a-zA-Z_][\w:-]*)\)$/.exec(expr);
+        if (notAttrMatch?.groups) {
+          preds.push({ type: "notAttr", name: notAttrMatch.groups.name });
           continue;
         }
 

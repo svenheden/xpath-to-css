@@ -137,6 +137,37 @@ describe("@miichom/lodestone", () => {
     expect(noSpanEl).toBeNull();
   });
 
+  it("converts negated attribute predicates to :not([attr])", () => {
+    expect(xPathToCss("//li[not(@data-tooltip)]")).toBe("li:not([data-tooltip])");
+  });
+
+  it("converts complex multi-conditions with negated attributes", () => {
+    const actual = xPathToCss(
+      "//ul[@class='entry__pvpteam__info']/li[img and span and not(i) and not(@data-tooltip)]/span"
+    );
+    const expected =
+      "ul.entry__pvpteam__info > li:not([data-tooltip]):has(> img):has(> span):not(:has(> i)) > span";
+
+    expect(actual).toBe(expected);
+  });
+
+  it("correctly filters DOM elements using negated attribute predicates", () => {
+    const html = `
+      <section>
+        <div id="valid"><span>Active Item</span></div>
+        <div id="ignored" data-disabled="true"><span>Disabled Item</span></div>
+      </section>
+    `;
+
+    const { document } = parseHTML(html);
+
+    // Should only match the <span> inside the <div> without the data-disabled attribute
+    const selector = xPathToCss("//section/div[not(@data-disabled)]/span");
+    const el = document.querySelector(selector);
+
+    expect(el?.textContent?.trim()).toBe("Active Item");
+  });
+
   it("converts live XPath from unjs.io", async () => {
     const res = await fetch("https://unjs.io/", {
       headers: {
