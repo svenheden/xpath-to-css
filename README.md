@@ -10,7 +10,7 @@ This package is a modern TypeScript rewrite of the original Python [cssify](http
 ## Install
 
 ```bash
-npm install --save-dev @miichom/xpath2css
+npm install @miichom/xpath2css
 ```
 
 ## Basic Usage
