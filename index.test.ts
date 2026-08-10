@@ -126,12 +126,10 @@ describe("@miichom/lodestone", () => {
 
     const { document } = parseHTML(html);
 
-    // 1. Target container with direct <img> and <span>, but no <i>
     const selector = xPathToCss("//section/div[img and span and not(i)]/span");
     const el = document.querySelector(selector);
     expect(el?.textContent?.trim()).toBe("Valid Target");
 
-    // 2. Query for element missing a specific child
     const noSpanSelector = xPathToCss("//section/div[not(span)]");
     const noSpanEl = document.querySelector(noSpanSelector);
     expect(noSpanEl).toBeNull();
@@ -161,7 +159,6 @@ describe("@miichom/lodestone", () => {
 
     const { document } = parseHTML(html);
 
-    // Should only match the <span> inside the <div> without the data-disabled attribute
     const selector = xPathToCss("//section/div[not(@data-disabled)]/span");
     const el = document.querySelector(selector);
 
