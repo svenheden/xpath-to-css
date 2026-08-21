@@ -30,13 +30,14 @@
     "@tsconfig/node22": "^22.0.5",
     "@types/bun": "latest",
     "@vitest/coverage-v8": "^4.1.10",
+    "bumpp": "^12.2.1",
     "linkedom": "^0.18.13",
     "std-env": "^4.2.0",
     "tsdown": "^0.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   },
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@11.22.0",
   "engines": {
     "node": ">=20.0.0"
   }

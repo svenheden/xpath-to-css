@@ -136,7 +136,9 @@ describe("@miichom/lodestone", () => {
   });
 
   it("converts negated attribute predicates to :not([attr])", () => {
-    expect(xPathToCss("//li[not(@data-tooltip)]")).toBe("li:not([data-tooltip])");
+    expect(xPathToCss("//li[not(@data-tooltip)]")).toBe(
+      "li:not([data-tooltip])"
+    );
   });
 
   it("converts complex multi-conditions with negated attributes", () => {
