@@ -1,0 +1,43 @@
+name: Format
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    if: github.repository_owner == 'xivapi'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      NODE_OPTIONS: "--max_old_space_size=4096"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format code
+        run: pnpm run format
+        
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v7.2.0
+        with:
+          commit_message: "[ci] format"
+          branch: ${{ github.head_ref || github.ref_name }}
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_author: ${{ github.event.commits[0].author.name || github.actor }} <${{ github.actor }}@users.noreply.github.com>
