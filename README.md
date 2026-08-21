@@ -20,17 +20,20 @@ npm install @miichom/xpath2css
 import { xPathToCss } from "@miichom/xpath2css";
 
 // deno
-import { xPathToCss } from "https://esm.sh/@miichom/xpath2css";
+import { xPathToCss } from "[https://esm.sh/@miichom/xpath2css](https://esm.sh/@miichom/xpath2css)";
 import { xPathToCss } from "npm:@miichom/xpath2css"; // or directly from npm
 
-const xPath = '//div[@id="foo"][2]/span[@class="bar"]//a[contains(@class, "baz")]//img[1]';
+const xPath =
+  '//div[@id="foo"][2]/span[@class="bar"]//a[contains(@class, "baz")]//img[1]';
 const css = xPathToCss(xPath);
-console.log(css) // => 'div#foo:nth-of-type(2) > span.bar a[class*=baz] img:first-of-type'
+console.log(css); // => 'div#foo:nth-of-type(2) > span.bar a[class*=baz] img:first-of-type'
 ```
 
 ## Contributing
 
-Bug reports, improvements, and new test cases are welcome. See the [Contributing Guidelines](./CONTRIBUTING.md) for details.
+Contributions, issues, and feature requests are always welcome! If you'd like to help improve the project, feel free to check open issues or submit a pull request. A huge thank you to everyone helping make this package better!
+
+Please review our [Contributor Manual](./CONTRIBUTING.md) before getting started.
 
 ## License
 

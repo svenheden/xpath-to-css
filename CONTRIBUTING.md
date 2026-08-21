@@ -1,4 +1,4 @@
-# Contributing to xpath2css
+# Contributor Manual
 
 Thanks for your interest in contributing! We welcome contributions of all kinds, including bug fixes, new features, documentation improvements, and &mdash; eventually &mdash; translations.
 
