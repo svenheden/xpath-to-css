@@ -10,10 +10,6 @@ on:
                 required: true
                 type: string
 
-# Only run for merged release/* pull requests that originate from THIS repo.
-# The `head.repo.full_name == github.repository` check is essential: it stops a
-# fork from opening a PR whose branch is named `release/*` and having this
-# privileged workflow run against it. See "Security" below.
 jobs:
     release:
         if: >-
@@ -29,33 +25,46 @@ jobs:
             contents: write # create the tag, release, and read the repo
             id-token: write # npm OIDC trusted publishing
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@v4
               with:
-                  # Check out the merge commit so package.json has the bumped version
-                  ref: ${{ github.event.pull_request.merge_commit_sha }}
+                  # Checkout merge commit for PRs, or main branch for manual runs
+                  ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || 'main' }}
                   fetch-depth: 0
-            - uses: pnpm/action-setup@v6
-            - uses: actions/setup-node@v7
+
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v4
               with:
                   node-version: 22
                   registry-url: https://registry.npmjs.org
                   cache: "pnpm"
 
+            # Dynamically pull version from input if manual, or read package.json if PR
             - name: Read version
               id: version
-              run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+                  fi
 
             - name: Create tag
               uses: actions/github-script@v8
               with:
                   script: |
+                      const sha = context.payload.pull_request 
+                        ? context.payload.pull_request.merge_commit_sha 
+                        : context.sha;
+                      
                       await github.rest.git.createRef({
                         owner: context.repo.owner,
                         repo: context.repo.repo,
                         ref: `refs/tags/v${{ steps.version.outputs.version }}`,
-                        sha: context.payload.pull_request.merge_commit_sha,
+                        sha: sha,
                       })
-            - run: git fetch --tags
+
+            - name: Fetch tags
+              run: git fetch --tags
 
             - run: pnpm ci
             - run: pnpm run build --if-present
@@ -66,5 +75,4 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             # Publish with npm OIDC trusted publishing (no NPM_TOKEN needed).
-            # Requires npm CLI >= 11.5.1 and a configured trusted publisher on npmjs.com.
             - run: pnpm publish
