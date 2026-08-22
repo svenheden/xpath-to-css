@@ -17,9 +17,13 @@ on:
 jobs:
     release:
         if: >-
-            github.event.pull_request.merged == true &&
-            github.event.pull_request.head.repo.full_name == github.repository &&
-            startsWith(github.event.pull_request.head.ref, 'release/')
+            (
+                github.event_name == 'pull_request' &&
+                github.event.pull_request.merged == true &&
+                github.event.pull_request.head.repo.full_name == github.repository &&
+                startsWith(github.event.pull_request.head.ref, 'release/')
+            ) ||
+            github.event_name == 'workflow_dispatch'
         runs-on: ubuntu-latest
         permissions:
             contents: write # create the tag, release, and read the repo
