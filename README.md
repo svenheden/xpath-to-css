@@ -20,7 +20,7 @@ npm install @miichom/xpath2css
 import { xPathToCss } from "@miichom/xpath2css";
 
 // deno
-import { xPathToCss } from "[https://esm.sh/@miichom/xpath2css](https://esm.sh/@miichom/xpath2css)";
+import { xPathToCss } from "https://esm.sh/@miichom/xpath2css";
 import { xPathToCss } from "npm:@miichom/xpath2css"; // or directly from npm
 
 const xPath =
