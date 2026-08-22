@@ -31,6 +31,7 @@
     "@types/bun": "latest",
     "@vitest/coverage-v8": "^4.1.10",
     "bumpp": "^12.2.1",
+    "css-select": "^7.0.0",
     "linkedom": "^0.18.13",
     "std-env": "^4.2.0",
     "tsdown": "^0.22.4",

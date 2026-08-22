@@ -1,5 +1,4 @@
 {
-  "rewrap.wrappingColumn": 80,
   "editor.codeActionsOnSave": {
     "source.action.useSortedPackageJson.biome": "explicit",
     "source.organizeImports.biome": "explicit",

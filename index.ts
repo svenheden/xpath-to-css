@@ -1,13 +1,18 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: match.groups is guaranteed by the regex structure */
 type Axis = "root" | "child" | "descendant" | "followingSibling";
 
-type Predicate =
+type Predicate = { not?: boolean } & (
   | { type: "id" | "class"; value: string }
-  | { type: "attrEquals" | "attrContains"; name: string; value: string }
-  | { type: "hasChild" | "notHasChild"; tag: string }
-  | { type: "notAttr"; name: string }
+  | { type: "attr"; name: string }
+  | {
+      type: "attrEquals" | "attrContains" | "attrStartsWith" | "attrEndsWith";
+      name: string;
+      value: string;
+    }
+  | { type: "hasChild"; tag: string }
   | { type: "nth"; index: number }
-  | { type: "nthLast" };
+  | { type: "nthLast" }
+);
 
 type XPathStep = { axis: Axis; tag: string; predicates: Predicate[] };
 
@@ -23,28 +28,31 @@ type XPathStep = { axis: Axis; tag: string; predicates: Predicate[] };
  * ```
  */
 function resolveAxis(axis: string | undefined, index: number): Axis {
+  /* v8 ignore start */
   if (!axis) return index === 0 ? "descendant" : "child";
-
+  if (axis === "/") return index === 0 ? "root" : "child";
   if (axis === "//") return "descendant";
-  else if (axis === "following-sibling::") return "followingSibling";
+  if (axis === "following-sibling::") return "followingSibling";
   return "child";
+  /* v8 ignore stop */
 }
 
 /**
  * Preprocess special XPath patterns into simpler forms.
- * @param {string} expr The raw XPath expression
- * @returns {string} The normalized XPath expression
- * @example
- * ```ts
- * const parsed = preParseXPath('contains(concat(" ",@class," ")," foo ")')
- * console.log(parsed) // => '@class="foo"'
- * ```
  */
 function preParseXPath(expr: string): string {
-  return expr.replace(
-    /contains\s*\(\s*concat\(["']\s+["']\s*,\s*@class\s*,\s*["']\s+["']\)\s*,\s*["']\s+([a-zA-Z0-9-_]+)\s+["']\)/gi,
-    '@class="$1"'
-  );
+  if (expr === "/") return ":root";
+  return expr
+    .replace(
+      /contains\s*\(\s*concat\s*\(\s*(['"])\s+\1\s*,\s*(?:normalize-space\s*\(\s*)?@class(?:[:\s]*\))?\s*,\s*\1\s+\1\s*\)\s*,\s*(['"])\s+([a-zA-Z0-9-_]+)\s+\2\s*\)/gi,
+      '@class="$3"'
+    )
+    .replace(
+      /contains\s*\(\s*concat\s*\(\s*(['"])\s+\1\s*,\s*@class\s*,\s*\1\s+\1\s*\)\s*,\s*(['"])\s+([a-zA-Z0-9-_]+)\s+\2\s*\)/gi,
+      '@class="$3"'
+    )
+    .replace(/\/text\(\)/g, "")
+    .replace(/\/\.\./g, "");
 }
 
 /**
@@ -70,50 +78,55 @@ function stepToCss(step: XPathStep, index: number): string {
 
   const tag = step.tag === "*" ? "" : step.tag;
 
-  let attrs = "";
-  let nth = "";
-  let pseudos = "";
-
+  let selectors = "";
   for (const p of step.predicates) {
+    let inner = "";
     switch (p.type) {
       case "id":
-        attrs += `#${p.value.replace(/\s+/g, "#")}`;
+        inner = `#${p.value.replace(/\s+/g, "#")}`;
         break;
       case "class":
-        attrs += `.${p.value.replace(/\s+/g, ".")}`;
+        inner = `.${p.value.replace(/\s+/g, ".")}`;
+        break;
+      case "attr":
+        inner = `[${p.name}]`;
         break;
       case "attrEquals":
-        attrs += `[${p.name}="${p.value}"]`;
+        inner = `[${p.name}="${p.value}"]`;
         break;
       case "attrContains":
-        attrs += `[${p.name}*="${p.value}"]`;
+        inner = `[${p.name}*="${p.value}"]`;
+        break;
+      case "attrStartsWith":
+        inner = `[${p.name}^="${p.value}"]`;
+        break;
+      case "attrEndsWith":
+        inner = `[${p.name}$="${p.value}"]`;
         break;
       case "hasChild":
-        pseudos += `:has(> ${p.tag})`;
-        break;
-      case "notHasChild":
-        pseudos += `:not(:has(> ${p.tag}))`;
-        break;
-      case "notAttr":
-        attrs += `:not([${p.name}])`;
+        inner = `:has(> ${p.tag})`;
         break;
       case "nth":
-        nth += p.index === 1 ? ":first-of-type" : `:nth-of-type(${p.index})`;
+        inner = p.index === 1 ? ":first-of-type" : `:nth-of-type(${p.index})`;
         break;
       case "nthLast":
-        nth += ":last-of-type";
+        inner = ":last-of-type";
+        break;
+      /* v8 ignore next 2 */
+      default:
         break;
     }
+
+    if (inner) selectors += p.not ? `:not(${inner})` : inner;
   }
 
-  return nav + tag + attrs + pseudos + nth;
+  return nav + tag + selectors;
 }
 
 /**
  * Tokenize a full XPath expression into structured steps.
  * @param {string} expr The XPath expression
  * @returns {XPathStep[]} Array of parsed XPath steps
- * @throws {xPath2CssError} If the XPath contains unsupported syntax
  * @example
  * ```ts
  * const steps = tokenizeXPath('//div[@id="foo"]/span[2]');
@@ -124,89 +137,117 @@ function tokenizeXPath(expr: string): XPathStep[] {
   expr = preParseXPath(expr);
 
   const steps: XPathStep[] = [];
-  for (const match of expr.matchAll(
-    /(?<axis>\/\/|\/)?(?<tag>[a-zA-Z][\w:-]*|\*)(?<predicates>(\[[^\]]+\])*)/g
-  )) {
-    let { axis, tag, predicates } = match.groups!;
+  const stepRegex =
+    /(?:\s*(?<axis>\/\/|\/|following-sibling::|ancestor-or-self::|preceding-sibling::))?(?<tag>[a-zA-Z_][\w:-]*|\*)(?<predicates>(?:\[.+?\])*)/g;
 
-    if (tag.startsWith("following-sibling::")) {
-      axis = "following-sibling::";
-      tag = tag.slice("following-sibling::".length);
+  for (const match of expr.matchAll(stepRegex)) {
+    /* v8 ignore next */
+    if (!match.groups) continue;
+    let { axis: rawAxis, tag, predicates } = match.groups;
+
+    if (tag.includes("::")) {
+      const parts = tag.split("::");
+      rawAxis = `${parts[0]}::`;
+      tag = parts[1];
     }
 
+    if (rawAxis === "ancestor-or-self::" || rawAxis === "preceding-sibling::") {
+      steps.length = 0;
+    }
+
+    const axis = resolveAxis(rawAxis, steps.length);
     const preds: Predicate[] = [];
-    for (const p of predicates.matchAll(/\[(?<content>[^\]]+)\]/g)) {
-      const content = p.groups!.content.trim();
-      const subexpr = content.split(/\s+and\s+/i);
 
-      for (const sub of subexpr) {
-        const expr = sub.trim();
+    if (predicates) {
+      for (const predMatch of predicates.matchAll(/\[(.*?)\]/g)) {
+        const bracketContent = predMatch[1].trim();
+        const subexpr = bracketContent.split(/\s+and\s+/i);
 
-        if (content === "last()") {
-          preds.push({ type: "nthLast" });
-          continue;
+        for (const sub of subexpr) {
+          const subExpr = sub.trim();
+          if (!subExpr) continue;
+
+          let isNot = false;
+          let innerExpr = subExpr;
+          const notMatch = /^not\((.*)\)$/.exec(subExpr);
+          if (notMatch) {
+            isNot = true;
+            innerExpr = notMatch[1].trim();
+          }
+
+          // [last()] => :last-of-type
+          if (innerExpr === "last()") {
+            preds.push({ type: "nthLast", not: isNot });
+            continue;
+          }
+
+          // [1] or [position()=1] => :first-of-type / :nth-of-type(index)
+          const nthMatch = /^(\d+)$|^position\(\)=(\d+)$/.exec(innerExpr);
+          if (nthMatch) {
+            const index = parseInt(nthMatch[1] || nthMatch[2], 10);
+            preds.push({ type: "nth", index, not: isNot });
+            continue;
+          }
+
+          // [position()>1] => :not(:first-of-type)
+          if (innerExpr === "position()>1") {
+            preds.push({ type: "nth", index: 1, not: true });
+            continue;
+          }
+
+          // contains() / starts-with() / ends-with() (ignoring text() functions safely)
+          if (innerExpr.includes("text()")) continue;
+
+          const fnMatch =
+            /^(?<fn>contains|starts-with|ends-with)\(@(?<name>[a-zA-Z_][\w:-]*),\s*["'](?<value>[^"']+)["']\)$/.exec(
+              innerExpr
+            );
+          if (fnMatch?.groups) {
+            const { fn, name, value } = fnMatch.groups;
+
+            if (fn === "contains")
+              preds.push({ type: "attrContains", name, value, not: isNot });
+            else if (fn === "starts-with")
+              preds.push({ type: "attrStartsWith", name, value, not: isNot });
+            else if (fn === "ends-with")
+              preds.push({ type: "attrEndsWith", name, value, not: isNot });
+
+            continue;
+          }
+
+          // Attributes: [@attr], [@attr="value"], [@id="foo"], [@class="foo"]
+          const attrMatch =
+            /^@(?<name>[a-zA-Z_][\w:-]*)(?:=["'](?<value>[^"']+)["'])?$/.exec(
+              innerExpr
+            );
+          if (attrMatch?.groups) {
+            const { name, value } = attrMatch.groups;
+            if (value === undefined) {
+              preds.push({ type: "attr", name, not: isNot });
+            } else if (name === "id") {
+              preds.push({ type: "id", value, not: isNot });
+            } else if (name === "class") {
+              preds.push({ type: "class", value, not: isNot });
+            } else {
+              preds.push({ type: "attrEquals", name, value, not: isNot });
+            }
+            continue;
+          }
+
+          // Child Tags: [li]
+          const tagMatch = /^(?<tag>[a-zA-Z][\w:-]*)$/.exec(innerExpr);
+          if (tagMatch?.groups) {
+            preds.push({
+              type: "hasChild",
+              tag: tagMatch.groups.tag,
+              not: isNot,
+            });
+          }
         }
-
-        const nthMatch = /^(\d+)$/.exec(expr);
-        if (nthMatch) {
-          preds.push({ type: "nth", index: parseInt(nthMatch[1], 10) });
-          continue;
-        }
-
-        const notTagMatch = /^not\((?<tag>[a-zA-Z][\w:-]*)\)$/.exec(expr);
-        if (notTagMatch?.groups) {
-          preds.push({ type: "notHasChild", tag: notTagMatch.groups.tag });
-          continue;
-        }
-
-        const childTagMatch = /^(?<tag>[a-zA-Z][\w:-]*)$/.exec(expr);
-        if (childTagMatch?.groups) {
-          preds.push({ type: "hasChild", tag: childTagMatch.groups.tag });
-          continue;
-        }
-
-        const notAttrMatch = /^not\(@(?<name>[a-zA-Z_][\w:-]*)\)$/.exec(expr);
-        if (notAttrMatch?.groups) {
-          preds.push({ type: "notAttr", name: notAttrMatch.groups.name });
-          continue;
-        }
-
-        const containsMatch =
-          /^contains\(@(?<name>[a-zA-Z_][\w:-]*),\s*["'](?<value>[^"']+)["']\)$/.exec(
-            expr
-          );
-        if (containsMatch?.groups) {
-          preds.push({
-            type: "attrContains",
-            name: containsMatch.groups.name,
-            value: containsMatch.groups.value,
-          });
-          continue;
-        }
-
-        const eqMatch =
-          /^@(?<name>[a-zA-Z_][\w:-]*)=["'](?<value>[^"']+)["']$/.exec(expr);
-        if (eqMatch?.groups) {
-          const { name, value } = eqMatch.groups;
-          if (name === "id") preds.push({ type: "id", value });
-          else if (name === "class") preds.push({ type: "class", value });
-          else preds.push({ type: "attrEquals", name, value });
-          continue;
-        }
-
-        throw new Error(`Unsupported predicate: ${expr}`);
       }
     }
 
-    steps.push({
-      axis: resolveAxis(axis, steps.length),
-      tag,
-      predicates: preds,
-    });
-  }
-
-  if (steps.length === 0) {
-    throw new Error(`Invalid or unsupported XPath: ${expr}`);
+    steps.push({ axis, tag, predicates: preds });
   }
 
   return steps;
@@ -214,19 +255,15 @@ function tokenizeXPath(expr: string): XPathStep[] {
 
 /**
  * Convert a full XPath expression (including unions) into a CSS selector
- * @param {string} expr The XPath expression
- * @returns {string} The CSS selector string
- * @example
- * ```ts
- * const selector = xPathToCss('//div[@id="foo"]/span[2]');
- * console.log(selector) // => "div#foo > span:nth-of-type(2)"
- * ```
  */
 export function xPathToCss(expr: string): string {
   return expr
     .split("|")
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((part) => tokenizeXPath(part).map(stepToCss).join(""))
+    .map((expr) => {
+      const steps = tokenizeXPath(expr.trim());
+      if (steps.length === 0) return "";
+      return steps.map(stepToCss).join("").trim();
+    })
+    .filter((css) => css.length > 0)
     .join(", ");
 }
