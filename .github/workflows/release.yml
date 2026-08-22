@@ -45,6 +45,7 @@ jobs:
                         ref: `refs/tags/v${{ steps.version.outputs.version }}`,
                         sha: context.payload.pull_request.merge_commit_sha,
                       })
+            - run: git fetch --tags
 
             - run: pnpm ci
             - run: pnpm run build --if-present
