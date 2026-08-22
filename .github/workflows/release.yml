@@ -3,6 +3,12 @@ name: Release
 on:
     pull_request:
         types: [closed]
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version to release (e.g., major.minor.patch)"
+                required: true
+                type: string
 
 # Only run for merged release/* pull requests that originate from THIS repo.
 # The `head.repo.full_name == github.repository` check is essential: it stops a
