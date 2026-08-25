@@ -26,17 +26,17 @@
     "test": "vitest --coverage"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.3",
-    "@tsconfig/node22": "^22.0.5",
+    "@biomejs/biome": "^2.5.10",
+    "@tsconfig/node22": "^22.0.6",
     "@types/bun": "latest",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.11",
     "bumpp": "^12.2.1",
     "css-select": "^7.0.0",
     "linkedom": "^0.18.13",
     "std-env": "^4.2.0",
-    "tsdown": "^0.22.4",
+    "tsdown": "^0.22.14",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "packageManager": "pnpm@11.22.0",
   "engines": {

@@ -21,7 +21,6 @@ type XPathStep = {
   attribute?: string;
 };
 
-
 function resolveAxis(axis: string | undefined, index: number): Axis {
   /* v8 ignore start */
   if (!axis) return index === 0 ? "descendant" : "child";
@@ -46,7 +45,6 @@ function preParseXPath(expr: string): string {
     .replace(/\/text\(\)/g, "")
     .replace(/\/\.\./g, "");
 }
-
 
 function stepToCss(
   step: XPathStep,
@@ -111,7 +109,6 @@ function stepToCss(
 
   return { selector, attribute: step.attribute };
 }
-
 
 function tokenizeXPath(expr: string): XPathStep[] {
   expr = preParseXPath(expr);
