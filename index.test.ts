@@ -2,18 +2,27 @@ import * as CSSselect from "css-select";
 import { parseHTML } from "linkedom";
 import { runtime } from "std-env";
 import { describe, expect, it } from "vitest";
-import { xPathToCss } from ".";
+import { fromXPathExpression } from ".";
 import pkg from "./package.json" with { type: "json" };
 
 expect.extend({
-  toBeValidCss(xpath: string, expected: string) {
-    const received = xPathToCss(xpath);
-    const pass = received === expected;
+  toBeValidCss(
+    xpath: string,
+    expected: string | { selector: string; attribute: string }
+  ) {
+    const received = fromXPathExpression(xpath);
+    const pass =
+      typeof received === "object" && typeof expected === "object"
+        ? received?.selector === expected?.selector &&
+          received?.attribute === expected?.attribute
+        : received === expected;
 
     let isValidSyntax = true;
     if (pass) {
       try {
-        CSSselect.compile(received);
+        CSSselect.compile(
+          typeof received === "string" ? received : received.selector
+        );
       } catch {
         isValidSyntax = false;
       }
@@ -22,10 +31,16 @@ expect.extend({
     return {
       pass: pass && isValidSyntax,
       message: () => {
+        const format = (val: typeof received) =>
+          typeof val === "object" ? JSON.stringify(val) : val;
+
         if (!pass) {
-          return `Expected XPath "${xpath}" to translate to CSS selector:\n  Expected: ${expected}\n  Received: ${received}`;
+          return `Expected XPath "${xpath}" to translate to CSS selector/attribute:\n  Expected: ${format(expected)}\n  Received: ${format(received)}`;
         }
-        return `Expected CSS selector "${received}" to be syntactically valid according to CSS specs.`;
+
+        const selector =
+          typeof received === "string" ? received : received.selector;
+        return `Expected CSS selector "${selector}" to be syntactically valid according to CSS specs.`;
       },
     };
   },
@@ -33,7 +48,9 @@ expect.extend({
 
 declare module "vitest" {
   interface Assertion<T> {
-    toBeValidCss(expectedCss: string): void;
+    toBeValidCss(
+      expected: string | { selector: string; attribute: string }
+    ): void;
   }
 }
 
@@ -57,7 +74,7 @@ describe("Axes and Combinators", () => {
     expect("//h1/following-sibling::ul").toBeValidCss("h1 + ul");
   });
 
-  it("should handle unsupported or reset axes gracefully", () => {
+  it("should handle unsupported or reset axes", () => {
     expect("//li/ancestor-or-self::section").toBeValidCss("section");
   });
 });
@@ -80,7 +97,7 @@ describe("Functions and Complex Expressions", () => {
     expect("//a | //span").toBeValidCss("a, span");
   });
 
-  it("should handle unsupported functions or complex expressions gracefully", () => {
+  it("should handle unsupported functions or complex expressions", () => {
     expect('//button[text()="Submit"]').toBeValidCss("button");
     expect("//ul[count(li) > 2]").toBeValidCss("ul");
     expect("//product[@price > 2.50]").toBeValidCss("product");
@@ -120,6 +137,10 @@ describe("Predicates", () => {
       "//div[contains(concat(' ',normalize-space(@class),' '),' ')]"
     ).toBeValidCss("div");
   });
+
+  it("should handle unsupported attributes", () => {
+    expect("//a/@href").toBeValidCss({ selector: "a", attribute: "href" });
+  });
 });
 
 describe("DOM and Runtime Integration", () => {
@@ -133,8 +154,10 @@ describe("DOM and Runtime Integration", () => {
     `;
     const { document } = parseHTML(html);
 
-    const selector = xPathToCss("//section/div[img and span and not(i)]/span");
-    const el = document.querySelector(selector);
+    const selector = fromXPathExpression(
+      "//section/div[img and span and not(i)]/span"
+    );
+    const el = document.querySelector(selector as string);
 
     expect(el?.textContent?.trim()).toBe("Valid Target");
   });
@@ -148,8 +171,10 @@ describe("DOM and Runtime Integration", () => {
     `;
     const { document } = parseHTML(html);
 
-    const selector = xPathToCss("//section/div[not(@data-disabled)]/span");
-    const el = document.querySelector(selector);
+    const selector = fromXPathExpression(
+      "//section/div[not(@data-disabled)]/span"
+    );
+    const el = document.querySelector(selector as string);
 
     expect(el?.textContent?.trim()).toBe("Active Item");
   });
@@ -162,10 +187,10 @@ describe("DOM and Runtime Integration", () => {
     });
     const { document } = parseHTML(await res.text());
 
-    const css = xPathToCss(
+    const css = fromXPathExpression(
       "/html/body/div[2]/div[3]/main/section[1]/div[1]/div[1]/h1"
     );
-    const el = document.querySelector(css);
+    const el = document.querySelector(css as string);
 
     expect(el?.textContent?.trim()).toBe(
       "Unleash JavaScript's Potential with the UnJS Ecosystem"
